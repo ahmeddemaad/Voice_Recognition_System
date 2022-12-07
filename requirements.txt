@@ -1,0 +1,8 @@
+librosa
+matplotlib
+numpy
+librosa.display
+flask
+sklearn
+pickle
+os
