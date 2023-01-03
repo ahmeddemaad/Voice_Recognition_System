@@ -1,5 +1,20 @@
+
+// recorder and close buttons
 var startRecordingButton = document.getElementById("startRecordingButton");
-var playButton = document.getElementById("playButton");
+var closeButton = document.getElementById("closeButton");
+// message and door variables
+var response = document.getElementById("message");
+let image = document.getElementById("display_image");
+let spectrogram = document.getElementById("spectrogram");
+// graphs variables
+let alter1 = document.getElementById("alter1")
+let alter2 = document.getElementById("alter2");
+let alter3 = document.getElementById("alter3");
+
+const spectral = document.getElementById("spectral");
+const spectral_url = "../static/assets/spectral_centroid.jpg";
+const radar = document.getElementById("radar");
+const radar_url = "../static/assets/radar.jpg";
 
 var leftchannel = [];
 var rightchannel = [];
@@ -10,6 +25,7 @@ var mediaStream = null;
 var sampleRate = 48000;
 var context = null;
 var blob = null;
+
 
 startRecordingButton.addEventListener("click", function () {
   // Initialize recorder
@@ -32,7 +48,6 @@ startRecordingButton.addEventListener("click", function () {
     // creates an audio node from the microphone incoming stream
     mediaStream = context.createMediaStreamSource(e);
 
-    // https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/createScriptProcessor
     // bufferSize: the onaudioprocess event is called when the buffer is full
     var bufferSize = 2048;
     var numberOfInputChannels = 2;
@@ -57,7 +72,7 @@ startRecordingButton.addEventListener("click", function () {
         recordingLength += bufferSize;
     };
 
-    // we connect the recorder
+    // connecting the recorder
     mediaStream.connect(recorder);
     recorder.connect(context.destination);
     },
@@ -67,6 +82,7 @@ startRecordingButton.addEventListener("click", function () {
     );
 
     setTimeout(stopRecording, 3120);
+    startRecordingButton.classList.add("btn-disabled");
 });
 
 function stopRecording() {
@@ -74,15 +90,15 @@ function stopRecording() {
     recorder.disconnect(context.destination);
     mediaStream.disconnect(recorder);
 
-    // we flat the left and right channels down
+    // flat the left and right channels down
     // Float32Array[] => Float32Array
     var leftBuffer = flattenArray(leftchannel, recordingLength);
     var rightBuffer = flattenArray(rightchannel, recordingLength);
-    // we interleave both channels together
+    // interleave both channels together
     // [left[0],right[0],left[1],right[1],...]
     var interleaved = interleave(leftBuffer, rightBuffer);
 
-    // we create our wav file
+    // create the wav file
     var buffer = new ArrayBuffer(44 + interleaved.length * 2);
     var view = new DataView(buffer);
 
@@ -111,10 +127,13 @@ function stopRecording() {
         index += 2;
     }
 
-    // our final blob
+    // final blob
     blob = new Blob([view], { type: "audio/wav" });
 
-    saveRecord(blob);
+    saveRecord(blob);    
+
+    startRecordingButton.classList.remove("btn-disabled");
+    setTimeout(showGraphs,1500)
 
     leftchannel = [];
     rightchannel = [];
@@ -152,6 +171,7 @@ function writeUTFBytes(view, offset, string) {
     }
 }
 
+// send wav file to back-end
 let saveRecord = (audioBlob) => {
     let formdata = new FormData();
     formdata.append("AudioFile", audioBlob, "recordedAudio.wav");
@@ -162,20 +182,61 @@ let saveRecord = (audioBlob) => {
         contentType: false,
         cache: false,
         processData: false,
+        success: function(res) {
+            // update graphs
+            spectral.setAttribute("src", `${spectral_url}?r=${new Date().getTime()}`);
+            radar.setAttribute("src", `${radar_url}?r=${new Date().getTime()}`);
+            
+            if (res == "mostafa" || res == "ahmed" || res == "yehia" || res == "aisha"){
+                openTheDoor(res);
+            }
+            else {
+                others();
+            }
+        },
     });
 };
 
 
-playButton.addEventListener("click", function () {
-    if (blob == null) {
-        return;
-    }
+// Control door animation
+function showGraphs() {
+    alter3.classList.remove("alter_text2");
+    alter3.classList.add("alter-collapse");
+    spectral.classList.remove("alter-collapse");
+}
 
-    var url = window.URL.createObjectURL(blob);
-    var audio = new Audio(url);
-    audio.play();
+function openTheDoor(name) {
+    response.textContent = "Welcome back, " + name + ".";
+    response.classList.add("success");
+    response.classList.remove("failed");
+    image.src = "../static/img/door_opening.gif";
+    closeButton.classList.remove("collapse");
+    startRecordingButton.classList.add("btn-disabled");
+}
+
+// function dontOpen(name) {
+//     response.textContent = "Hello, " + name + ". Sorry can't open the door";
+//     response.classList.add("failed");
+//     response.classList.remove("success");
+// }
+
+function others () {
+    response.textContent = "Sorry you're not recognised";
+    response.classList.add("failed");
+    response.classList.remove("success");
+}
+
+closeButton.addEventListener("click", function () {
+    response.textContent = "Please say the password";
+    response.classList.remove("success");
+    response.classList.remove("failed");
+    image.src = "../static/img/door_closing.gif";
+    closeButton.classList.add("collapse");
+    startRecordingButton.classList.remove("btn-disabled");
 });
 
+
+// Animation for record button
 $(".activate").on("click touch", function (e) {
 var self = $(this);
 if (!self.hasClass("loading")) {
@@ -188,3 +249,28 @@ if (!self.hasClass("loading")) {
     }, 3120);
 }
 });
+
+
+
+
+
+
+
+// Control door animation
+
+    // image.src = "../static/img/door_opening.gif";
+    // image.src = "../static/img/door_closing.gif";
+
+    // startRecordingButton.classList.add("btn-disabled");
+    // startRecordingButton.classList.remove("btn-disabled");
+    // closeButton.classList.remove("collapse")
+
+    // response.classList.add("success")
+    // response.classList.add("failed");
+
+
+// setInterval(function () {
+//     mfcc.setAttribute("src", `${mfcc_url}?r=${new Date().getTime()}`);
+//     spectral.setAttribute("src", `${spectral_url}?r=${new Date().getTime()}`);
+    
+// }, 3000);
