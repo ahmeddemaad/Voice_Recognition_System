@@ -30,7 +30,7 @@ The Web Application is built using:
   - Flask (Python)
 - Models:
   - GMM (Gaussian Mixture Models)
-  - 
+    
 ## Screenshots
 ![voice 1](https://user-images.githubusercontent.com/90320433/215307740-027d2b38-0b50-46fe-93d2-f8544cd4738d.png)
 ![voice 2](https://user-images.githubusercontent.com/90320433/215307745-33f3931d-7202-4e3e-b026-42454fc977fc.png)
